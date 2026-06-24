@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>거리 측정 앱</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header>
+      <h1>거리 측정 앱</h1>
+      <p>OpenStreetMap Nominatim으로 출발지와 도착지를 조회하고 거리를 계산합니다.</p>
+    </header>
+
+    <main>
+      <form id="route-form">
+        <label>
+          출발지
+          <input id="origin-input" type="text" placeholder="예: 서울역" autocomplete="off" required />
+        </label>
+        <label>
+          도착지
+          <input id="destination-input" type="text" placeholder="예: 광화문" autocomplete="off" required />
+        </label>
+        <button type="submit">거리 계산</button>
+      </form>
+
+      <section id="result-card" class="hidden">
+        <div class="result-row">
+          <strong>출발지:</strong>
+          <span id="origin-text"></span>
+        </div>
+        <div class="result-row">
+          <strong>도착지:</strong>
+          <span id="destination-text"></span>
+        </div>
+        <div class="distance-box">
+          <span>총 거리</span>
+          <strong id="distance-text"></strong>
+        </div>
+        <a id="map-link" class="map-link" target="_blank" rel="noopener noreferrer">지도에서 보기</a>
+      </section>
+
+      <div id="message" class="message"></div>
+    </main>
+
+    <footer>
+      <p>이 앱은 OpenStreetMap Nominatim API를 사용합니다.</p>
+    </footer>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
