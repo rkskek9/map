@@ -7,36 +7,51 @@ const distanceText = document.getElementById('distance-text');
 const mapLink = document.getElementById('map-link');
 const resultCard = document.getElementById('result-card');
 const message = document.getElementById('message');
+const submitBtn = document.getElementById('submit-btn');
+const originDropdown = document.getElementById('origin-dropdown');
+const destinationDropdown = document.getElementById('destination-dropdown');
+
+let selectedOrigin = null;
+let selectedDestination = null;
 
 const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search';
+
+originInput.addEventListener('input', (event) => {
+  const query = event.target.value.trim();
+  if (query.length < 2) {
+    originDropdown.classList.add('hidden');
+    selectedOrigin = null;
+    updateSubmitButton();
+    return;
+  }
+  lookupPlaceSuggestions(query, originDropdown, 'origin');
+});
+
+destinationInput.addEventListener('input', (event) => {
+  const query = event.target.value.trim();
+  if (query.length < 2) {
+    destinationDropdown.classList.add('hidden');
+    selectedDestination = null;
+    updateSubmitButton();
+    return;
+  }
+  lookupPlaceSuggestions(query, destinationDropdown, 'destination');
+});
 
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
   clearMessage();
   resultCard.classList.add('hidden');
 
-  const originQuery = originInput.value.trim();
-  const destinationQuery = destinationInput.value.trim();
-
-  if (!originQuery || !destinationQuery) {
-    showMessage('출발지와 도착지를 모두 입력해 주세요.');
+  if (!selectedOrigin || !selectedDestination) {
+    showMessage('출발지와 도착지를 모두 선택해 주세요.');
     return;
   }
 
   try {
-    const [origin, destination] = await Promise.all([
-      lookupPlace(originQuery),
-      lookupPlace(destinationQuery),
-    ]);
+    const origin = selectedOrigin;
+    const destination = selectedDestination;
 
-    if (!origin) {
-      showMessage('출발지를 찾을 수 없습니다. 다른 이름을 입력해 주세요.');
-      return;
-    }
-    if (!destination) {
-      showMessage('도착지를 찾을 수 없습니다. 다른 이름을 입력해 주세요.');
-      return;
-    }
 
     const distanceKm = calculateDistance(origin.lat, origin.lon, destination.lat, destination.lon);
     const formattedDistance = formatDistance(distanceKm);
@@ -52,29 +67,6 @@ form.addEventListener('submit', async (event) => {
     console.error(error);
   }
 });
-
-async function lookupPlace(query) {
-  const url = new URL(NOMINATIM_URL);
-  url.searchParams.set('format', 'jsonv2');
-  url.searchParams.set('q', query);
-  url.searchParams.set('limit', '1');
-  url.searchParams.set('addressdetails', '0');
-  url.searchParams.set('accept-language', 'ko');
-
-  const response = await fetch(url.toString(), {
-    headers: {
-      'Accept': 'application/json',
-    },
-    mode: 'cors',
-  });
-
-  if (!response.ok) {
-    throw new Error(`Nominatim 요청 실패: ${response.status}`);
-  }
-
-  const results = await response.json();
-  return results && results.length ? results[0] : null;
-}
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
   const toRadians = (degrees) => (degrees * Math.PI) / 180;
@@ -106,6 +98,91 @@ function showMessage(text) {
   message.textContent = text;
 }
 
+document.addEventListener('click', (event) => {
+  if (!event.target.closest('#origin-input') && !event.target.closest('#origin-dropdown')) {
+    originDropdown.classList.add('hidden');
+  }
+  if (!event.target.closest('#destination-input') && !event.target.closest('#destination-dropdown')) {
+    destinationDropdown.classList.add('hidden');
+  }
+});
+
 function clearMessage() {
   message.textContent = '';
+}
+
+async function lookupPlaceSuggestions(query, dropdownElement, type) {
+  try {
+    const url = new URL(NOMINATIM_URL);
+    url.searchParams.set('format', 'jsonv2');
+    url.searchParams.set('q', query);
+    url.searchParams.set('limit', '5');
+    url.searchParams.set('addressdetails', '0');
+    url.searchParams.set('accept-language', 'ko');
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        'Accept': 'application/json',
+      },
+      mode: 'cors',
+    });
+
+    if (!response.ok) {
+      throw new Error(`Nominatim 요청 실패: ${response.status}`);
+    }
+
+    const results = await response.json();
+    
+    dropdownElement.innerHTML = '';
+    if (results.length === 0) {
+      const li = document.createElement('li');
+      li.textContent = '검색 결과 없음';
+      li.style.color = '#999';
+      li.style.pointerEvents = 'none';
+      dropdownElement.appendChild(li);
+      dropdownElement.classList.remove('hidden');
+      return;
+    }
+
+    results.forEach((result) => {
+      const li = document.createElement('li');
+      li.textContent = result.display_name;
+      li.addEventListener('click', () => {
+        selectPlace(result, type);
+      });
+      dropdownElement.appendChild(li);
+    });
+
+    dropdownElement.classList.remove('hidden');
+  } catch (error) {
+    console.error('자동완성 오류:', error);
+    const li = document.createElement('li');
+    li.textContent = '검색 중 오류 발생';
+    li.style.color = '#999';
+    li.style.pointerEvents = 'none';
+    dropdownElement.innerHTML = '';
+    dropdownElement.appendChild(li);
+    dropdownElement.classList.remove('hidden');
+  }
+}
+
+function selectPlace(place, type) {
+  if (type === 'origin') {
+    selectedOrigin = place;
+    originInput.value = place.display_name;
+    originDropdown.classList.add('hidden');
+  } else if (type === 'destination') {
+    selectedDestination = place;
+    destinationInput.value = place.display_name;
+    destinationDropdown.classList.add('hidden');
+  }
+  updateSubmitButton();
+}
+
+function updateSubmitButton() {
+  if (selectedOrigin && selectedDestination) {
+    submitBtn.disabled = false;
+  } else {
+    submitBtn.disabled = true;
+  }
 }

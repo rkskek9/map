@@ -17,13 +17,19 @@
       <form id="route-form">
         <label>
           출발지
-          <input id="origin-input" type="text" placeholder="예: 서울역" autocomplete="off" required />
+          <div class="input-wrapper">
+            <input id="origin-input" type="text" placeholder="예: 서울역" autocomplete="off" />
+            <ul id="origin-dropdown" class="suggestions-dropdown hidden"></ul>
+          </div>
         </label>
         <label>
           도착지
-          <input id="destination-input" type="text" placeholder="예: 광화문" autocomplete="off" required />
+          <div class="input-wrapper">
+            <input id="destination-input" type="text" placeholder="예: 광화문" autocomplete="off" />
+            <ul id="destination-dropdown" class="suggestions-dropdown hidden"></ul>
+          </div>
         </label>
-        <button type="submit">거리 계산</button>
+        <button type="submit" id="submit-btn" disabled>거리 계산</button>
       </form>
 
       <section id="result-card" class="hidden">
